@@ -1,3 +1,5 @@
+"use server";
+
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 
@@ -15,7 +17,10 @@ export interface JWTPayload {
   exp?: number;
 }
 
-export function generateToken(userId: string, email: string): string {
+export async function generateToken(
+  userId: string,
+  email: string,
+): Promise<string> {
   return jwt.sign({ userId, email }, JWT_SECRET, { expiresIn: JWT_EXPIRY });
 }
 
@@ -33,7 +38,7 @@ export async function setAuthCookie(
   email: string,
 ): Promise<void> {
   const cookieStore = await cookies();
-  const token = generateToken(userId, email);
+  const token = await generateToken(userId, email);
 
   cookieStore.set("auth-token", token, {
     httpOnly: true,
