@@ -5,7 +5,12 @@ import { authService } from "../auth.service";
 
 export async function POST(request: NextRequest) {
   try {
+
+    console.log(request);
+
     const body = await request.json();
+
+    console.log(body);
 
     // Validate input
     const validatedData = SignupSchema.parse(body);

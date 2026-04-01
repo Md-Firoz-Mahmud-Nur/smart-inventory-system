@@ -1,36 +1,37 @@
-import React from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from "@/lib/utils";
 
-interface GlassCardProps {
-  children: React.ReactNode;
-  className?: string;
-  hover?: boolean;
-}
-
-export function GlassCard({ children, className, hover = true }: GlassCardProps) {
+export function GlassCard({
+  className,
+  children,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn(
-        'relative rounded-xl border border-white/20 bg-white/10 backdrop-blur-md transition-all duration-300',
-        hover && 'hover:border-white/40 hover:bg-white/15',
-        className
-      )}
-    >
-      {children}
-    </div>
-  );
-}
+        // Base glass effect
+        "relative rounded-2xl",
 
-// Dark mode variant
-export function GlassCardDark({ children, className, hover = true }: GlassCardProps) {
-  return (
-    <div
-      className={cn(
-        'relative rounded-xl border border-white/10 bg-white/5 backdrop-blur-md transition-all duration-300',
-        hover && 'border-white/20 bg-white/10',
-        className
+        // Glass background (IMPORTANT)
+        "bg-white/10 dark:bg-white/5",
+
+        // Blur (core glass effect)
+        "backdrop-blur-xl",
+
+        // Border (VERY IMPORTANT for glass)
+        "border border-white/20 dark:border-white/10",
+
+        // Depth
+        "shadow-lg shadow-black/10 dark:shadow-black/40",
+
+        // Subtle inner glow (modern touch)
+        "before:absolute before:inset-0 before:rounded-2xl before:bg-gradient-to-br before:from-white/20 before:to-transparent before:opacity-50",
+
+        // Smooth transitions
+        "transition-all duration-300",
+
+        className,
       )}
-    >
+      {...props}>
       {children}
     </div>
   );
