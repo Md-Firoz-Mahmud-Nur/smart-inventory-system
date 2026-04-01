@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import gsap from "gsap";
-import useSWR from "swr";
-import { apiClient } from "@/lib/api-client";
 import { GlassCard } from "@/components/ui/glass-card";
 import { NeomorphButton } from "@/components/ui/neomorph-button";
 import { TableRowSkeleton } from "@/components/ui/skeleton";
+import { apiClient } from "@/lib/api-client";
+import gsap from "gsap";
+import React, { useEffect, useState } from "react";
+import useSWR from "swr";
 
 interface RestockItem {
   id: string;
@@ -75,14 +75,14 @@ export default function RestockQueuePage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-[var(--background)] to-[var(--secondary)]/10 p-4 md:p-8">
+    <main className="min-h-screen bg-linear-to-br from-background to-(--secondary)/10 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-[var(--foreground)]">
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground">
             Restock Queue
           </h1>
-          <p className="text-[var(--muted-foreground)] mt-2">
+          <p className="text-muted-foreground mt-2">
             Products requiring restocking, prioritized by urgency
           </p>
         </div>
@@ -122,23 +122,23 @@ export default function RestockQueuePage() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-[var(--border)]">
-                  <th className="px-6 py-4 text-left font-semibold text-[var(--foreground)]">
+                <tr className="border-b border-border">
+                  <th className="px-6 py-4 text-left font-semibold text-foreground">
                     Product Name
                   </th>
-                  <th className="px-6 py-4 text-left font-semibold text-[var(--foreground)]">
+                  <th className="px-6 py-4 text-left font-semibold text-foreground">
                     SKU
                   </th>
-                  <th className="px-6 py-4 text-left font-semibold text-[var(--foreground)]">
+                  <th className="px-6 py-4 text-left font-semibold text-foreground">
                     Current Stock
                   </th>
-                  <th className="px-6 py-4 text-left font-semibold text-[var(--foreground)]">
+                  <th className="px-6 py-4 text-left font-semibold text-foreground">
                     Priority
                   </th>
-                  <th className="px-6 py-4 text-left font-semibold text-[var(--foreground)]">
+                  <th className="px-6 py-4 text-left font-semibold text-foreground">
                     Added
                   </th>
-                  <th className="px-6 py-4 text-right font-semibold text-[var(--foreground)]">
+                  <th className="px-6 py-4 text-right font-semibold text-foreground">
                     Actions
                   </th>
                 </tr>
@@ -154,7 +154,7 @@ export default function RestockQueuePage() {
                   <tr>
                     <td
                       colSpan={6}
-                      className="px-6 py-12 text-center text-[var(--muted-foreground)]">
+                      className="px-6 py-12 text-center text-muted-foreground">
                       {selectedPriority
                         ? `No ${selectedPriority} priority items`
                         : "Restock queue is empty!"}
@@ -164,11 +164,11 @@ export default function RestockQueuePage() {
                   items.map((item: RestockItem) => (
                     <tr
                       key={item.id}
-                      className="border-b border-[var(--border)] hover:bg-[var(--muted)]/30 transition-colors">
-                      <td className="px-6 py-4 font-medium text-[var(--foreground)]">
+                      className="border-b border-border hover:bg-[var(--muted)]/30 transition-colors">
+                      <td className="px-6 py-4 font-medium text-foreground">
                         {item.product.name}
                       </td>
-                      <td className="px-6 py-4 text-sm font-mono text-[var(--muted-foreground)]">
+                      <td className="px-6 py-4 text-sm font-mono text-muted-foreground">
                         {item.product.sku}
                       </td>
                       <td className="px-6 py-4">
@@ -192,7 +192,7 @@ export default function RestockQueuePage() {
                             item.priority.slice(1)}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-[var(--muted-foreground)]">
+                      <td className="px-6 py-4 text-sm text-muted-foreground">
                         {new Date(item.createdAt).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 text-right space-x-2 flex justify-end">

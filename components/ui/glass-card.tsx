@@ -12,10 +12,10 @@ export function GlassCard({
         "relative rounded-lg",
 
         // Clean background
-        "bg-[var(--card)]",
+        "bg-card",
 
         // Subtle border
-        "border border-[var(--border)]",
+        "border border-border",
 
         // Soft shadow for depth
         "shadow-sm transition-all duration-300 hover:shadow-md",

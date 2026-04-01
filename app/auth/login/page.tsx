@@ -50,14 +50,14 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-[var(--background)] to-[var(--secondary)]/10 flex items-center justify-center p-4">
+    <main className="min-h-screen bg-linear-to-br from-background to-(--secondary)/10 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <GlassCard className="p-8">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-[var(--foreground)] mb-2">
+            <h1 className="text-3xl font-bold text-foreground mb-2">
               Welcome Back
             </h1>
-            <p className="text-[var(--muted-foreground)]">
+            <p className="text-muted-foreground">
               Sign in to your inventory management account
             </p>
           </div>
@@ -66,7 +66,7 @@ export default function LoginPage() {
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-medium text-[var(--foreground)] mb-2">
+                className="block text-sm font-medium text-foreground mb-2">
                 Email Address
               </label>
               <input
@@ -76,7 +76,7 @@ export default function LoginPage() {
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="you@example.com"
-                className="w-full px-4 py-2 rounded-lg border border-[var(--border)] bg-[var(--input)] text-[var(--foreground)] placeholder-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)] transition-all"
+                className="w-full px-4 py-2 rounded-lg border border-border bg-input text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
                 required
               />
             </div>
@@ -84,7 +84,7 @@ export default function LoginPage() {
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-medium text-[var(--foreground)] mb-2">
+                className="block text-sm font-medium text-foreground mb-2">
                 Password
               </label>
               <input
@@ -94,7 +94,7 @@ export default function LoginPage() {
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="••••••••"
-                className="w-full px-4 py-2 rounded-lg border border-[var(--border)] bg-[var(--input)] text-[var(--foreground)] placeholder-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)] transition-all"
+                className="w-full px-4 py-2 rounded-lg border border-border bg-input text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
                 required
               />
             </div>
@@ -118,10 +118,10 @@ export default function LoginPage() {
           <div className="mt-6 space-y-4">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-[var(--border)]" />
+                <div className="w-full border-t border-border" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-[var(--background)] text-[var(--muted-foreground)]">
+                <span className="px-2 bg-background text-muted-foreground">
                   Try Demo Account
                 </span>
               </div>
@@ -137,11 +137,11 @@ export default function LoginPage() {
           </div>
 
           <div className="mt-6 text-center">
-            <p className="text-[var(--muted-foreground)] text-sm">
+            <p className="text-muted-foreground text-sm">
               Don&apos;t have an account?{" "}
               <Link
                 href="/auth/signup"
-                className="font-semibold text-[var(--primary)] hover:underline">
+                className="font-semibold text-primary hover:underline">
                 Sign up
               </Link>
             </p>

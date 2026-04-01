@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import gsap from "gsap";
-import useSWR from "swr";
-import { apiClient } from "@/lib/api-client";
 import { GlassCard } from "@/components/ui/glass-card";
 import { NeomorphButton } from "@/components/ui/neomorph-button";
-import { ProductSkeleton, Skeleton } from "@/components/ui/skeleton";
+import { ProductSkeleton } from "@/components/ui/skeleton";
+import { apiClient } from "@/lib/api-client";
+import gsap from "gsap";
 import Link from "next/link";
+import React, { useEffect, useState } from "react";
+import useSWR from "swr";
 
 interface Product {
   id: string;
@@ -61,15 +61,15 @@ export default function ProductsPage() {
   }, [isLoading, filteredProducts.length]);
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-[var(--background)] to-[var(--secondary)]/10 p-4 md:p-8">
+    <main className="min-h-screen bg-linear-to-br from-background to-(--secondary)/10 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-[var(--foreground)]">
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground">
               Products
             </h1>
-            <p className="text-[var(--muted-foreground)] mt-2">
+            <p className="text-muted-foreground mt-2">
               Manage your product catalog and inventory
             </p>
           </div>
@@ -88,7 +88,7 @@ export default function ProductsPage() {
               placeholder="Search by name or SKU..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1 px-4 py-2 rounded-lg border border-[var(--border)] bg-[var(--input)] text-[var(--foreground)] placeholder-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)]"
+              className="flex-1 px-4 py-2 rounded-lg border border-border bg-input text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
         </GlassCard>
@@ -106,7 +106,7 @@ export default function ProductsPage() {
           ) : filteredProducts.length === 0 ? (
             <div className="col-span-full">
               <GlassCard className="p-12 text-center">
-                <p className="text-[var(--muted-foreground)] text-lg mb-4">
+                <p className="text-muted-foreground text-lg mb-4">
                   No products found
                 </p>
                 <Link href="/products/create">
@@ -124,7 +124,7 @@ export default function ProductsPage() {
                 <div className="p-6">
                   <div className="mb-4">
                     <div className="flex justify-between items-start mb-2">
-                      <h3 className="text-lg font-semibold text-[var(--foreground)] group-hover:text-[var(--primary)] transition-colors">
+                      <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
                         {product.name}
                       </h3>
                       <span
@@ -140,29 +140,29 @@ export default function ProductsPage() {
                           : "Out of stock"}
                       </span>
                     </div>
-                    <p className="text-sm text-[var(--muted-foreground)]">
+                    <p className="text-sm text-muted-foreground">
                       SKU: {product.sku}
                     </p>
                   </div>
 
-                  <p className="text-sm text-[var(--muted-foreground)] mb-4 line-clamp-2">
+                  <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
                     {product.description || "No description"}
                   </p>
 
                   <div className="flex justify-between items-end mb-4">
                     <div>
-                      <p className="text-xs text-[var(--muted-foreground)] mb-1">
+                      <p className="text-xs text-muted-foreground mb-1">
                         Category
                       </p>
-                      <p className="text-sm font-medium text-[var(--foreground)]">
+                      <p className="text-sm font-medium text-foreground">
                         {product.category?.name || "Uncategorized"}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs text-[var(--muted-foreground)] mb-1">
+                      <p className="text-xs text-muted-foreground mb-1">
                         Price
                       </p>
-                      <p className="text-lg font-bold text-[var(--primary)]">
+                      <p className="text-lg font-bold text-primary">
                         ${product.price.toFixed(2)}
                       </p>
                     </div>

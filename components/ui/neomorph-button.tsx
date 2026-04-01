@@ -26,11 +26,11 @@ export function NeomorphButton({
         size === "lg" && "px-6 py-3 text-lg",
         // Color variants
         variant === "primary" &&
-          "bg-gradient-to-b from-[var(--primary)] to-[var(--primary)] text-[var(--primary-foreground)] shadow-[0_4px_15px_rgba(255,105,50,0.4)] hover:shadow-[0_6px_20px_rgba(255,105,50,0.6)] active:shadow-[0_2px_8px_rgba(255,105,50,0.3)]",
+          "bg-gradient-to-b from-primary to-primary text-[var(--primary-foreground)] shadow-[0_4px_15px_rgba(255,105,50,0.4)] hover:shadow-[0_6px_20px_rgba(255,105,50,0.6)] active:shadow-[0_2px_8px_rgba(255,105,50,0.3)]",
         variant === "secondary" &&
-          "bg-gradient-to-b from-[var(--secondary)] to-[var(--secondary)] text-[var(--secondary-foreground)] shadow-[0_4px_15px_rgba(66,77,147,0.3)] hover:shadow-[0_6px_20px_rgba(66,77,147,0.5)]",
+          "bg-gradient-to-b from-(--secondary) to-(--secondary) text-[var(--secondary-foreground)] shadow-[0_4px_15px_rgba(66,77,147,0.3)] hover:shadow-[0_6px_20px_rgba(66,77,147,0.5)]",
         variant === "ghost" &&
-          "bg-transparent text-[var(--foreground)] shadow-none hover:bg-[var(--muted)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)]",
+          "bg-transparent text-foreground shadow-none hover:bg-[var(--muted)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)]",
         className,
       )}
       {...props}>

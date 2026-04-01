@@ -1,12 +1,13 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { GlassCard } from "@/components/ui/glass-card";
+import { NeomorphButton } from "@/components/ui/neomorph-button";
 import { apiClient } from "@/lib/api-client";
 import { SignupSchema } from "@/lib/validators";
-import { NeomorphButton } from "@/components/ui/neomorph-button";
-import { GlassCard } from "@/components/ui/glass-card";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import React, { useState } from "react";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -61,14 +62,14 @@ export default function SignupPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-[var(--background)] to-[var(--secondary)]/10 flex items-center justify-center p-4">
+    <main className="min-h-screen bg-linear-to-br from-background to-(--secondary)/10 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <GlassCard className="p-8">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-[var(--foreground)] mb-2">
+            <h1 className="text-3xl font-bold text-foreground mb-2">
               Create Account
             </h1>
-            <p className="text-[var(--muted-foreground)]">
+            <p className="text-muted-foreground">
               Set up your inventory management account
             </p>
           </div>
@@ -77,7 +78,7 @@ export default function SignupPage() {
             <div>
               <label
                 htmlFor="name"
-                className="block text-sm font-medium text-[var(--foreground)] mb-2">
+                className="block text-sm font-medium text-foreground mb-2">
                 Full Name
               </label>
               <input
@@ -87,7 +88,7 @@ export default function SignupPage() {
                 value={formData.name}
                 onChange={handleChange}
                 placeholder="John Doe"
-                className="w-full px-4 py-2 rounded-lg border border-[var(--border)] bg-[var(--input)] text-[var(--foreground)] placeholder-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)] transition-all"
+                className="w-full px-4 py-2 rounded-lg border border-border bg-input text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
                 required
               />
             </div>
@@ -95,7 +96,7 @@ export default function SignupPage() {
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-medium text-[var(--foreground)] mb-2">
+                className="block text-sm font-medium text-foreground mb-2">
                 Email Address
               </label>
               <input
@@ -105,7 +106,7 @@ export default function SignupPage() {
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="you@example.com"
-                className="w-full px-4 py-2 rounded-lg border border-[var(--border)] bg-[var(--input)] text-[var(--foreground)] placeholder-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)] transition-all"
+                className="w-full px-4 py-2 rounded-lg border border-border bg-input text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
                 required
               />
             </div>
@@ -113,7 +114,7 @@ export default function SignupPage() {
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-medium text-[var(--foreground)] mb-2">
+                className="block text-sm font-medium text-foreground mb-2">
                 Password
               </label>
               <input
@@ -123,7 +124,7 @@ export default function SignupPage() {
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="••••••••"
-                className="w-full px-4 py-2 rounded-lg border border-[var(--border)] bg-[var(--input)] text-[var(--foreground)] placeholder-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)] transition-all"
+                className="w-full px-4 py-2 rounded-lg border border-border bg-input text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
                 required
               />
             </div>
@@ -131,7 +132,7 @@ export default function SignupPage() {
             <div>
               <label
                 htmlFor="confirmPassword"
-                className="block text-sm font-medium text-[var(--foreground)] mb-2">
+                className="block text-sm font-medium text-foreground mb-2">
                 Confirm Password
               </label>
               <input
@@ -141,7 +142,7 @@ export default function SignupPage() {
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 placeholder="••••••••"
-                className="w-full px-4 py-2 rounded-lg border border-[var(--border)] bg-[var(--input)] text-[var(--foreground)] placeholder-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)] transition-all"
+                className="w-full px-4 py-2 rounded-lg border border-border bg-input text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
                 required
               />
             </div>
@@ -163,11 +164,11 @@ export default function SignupPage() {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-[var(--muted-foreground)] text-sm">
+            <p className="text-muted-foreground text-sm">
               Already have an account?{" "}
               <Link
                 href="/auth/login"
-                className="font-semibold text-[var(--primary)] hover:underline">
+                className="font-semibold text-primary hover:underline">
                 Sign in
               </Link>
             </p>
