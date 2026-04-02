@@ -16,8 +16,12 @@ export const authService = {
       throw new Error("Email already registered");
     }
 
+    console.log("before hashedPassword");
+
     // Hash password
     const hashedPassword = await bcrypt.hash(input.password, SALT_ROUNDS);
+
+    console.log(hashedPassword);
 
     // Create user
     const user = await prisma.user.create({
@@ -28,6 +32,8 @@ export const authService = {
       },
       select: { id: true, email: true, name: true },
     });
+
+    console.log(user);
 
     // Set auth cookie
     await setAuthCookie(user.id, user.email);

@@ -43,12 +43,16 @@ export default function SignupPage() {
         password: formData.password,
       });
 
+      console.log("before response");
+
       // Call API
       const response = await apiClient.signup({
         name: formData.name,
         email: formData.email,
         password: formData.password,
       });
+
+      console.log(response);
 
       if (response.success) {
         // Redirect to dashboard

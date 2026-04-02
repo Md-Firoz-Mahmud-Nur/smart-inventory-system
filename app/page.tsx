@@ -59,7 +59,7 @@ export default function Home() {
                 variant="primary"
                 size="lg"
                 className="w-full sm:w-auto">
-                Get Started Free
+                Get Started
               </NeomorphButton>
             </Link>
             <Link href="/auth/login">
@@ -71,10 +71,6 @@ export default function Home() {
               </NeomorphButton>
             </Link>
           </div>
-
-          <p className="text-muted-foreground text-sm">
-            No credit card required • 14-day free trial
-          </p>
         </div>
 
         {/* Gradient accent */}
@@ -163,7 +159,7 @@ export default function Home() {
             </p>
             <Link href="/auth/signup">
               <NeomorphButton variant="primary" size="lg" className="w-full">
-                Start Free Trial Today
+                Start Today
               </NeomorphButton>
             </Link>
           </GlassCard>
