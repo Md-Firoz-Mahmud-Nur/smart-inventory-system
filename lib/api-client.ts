@@ -13,7 +13,9 @@ async function request<T>(
   endpoint: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const url = `${endpoint.startsWith("/") ? "" : "/api/"}${endpoint}`;
+  const baseUrl =
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+  const url = `${baseUrl}${endpoint.startsWith("/") ? "" : "/"}${endpoint}`;
 
   const response = await fetch(url, {
     ...options,
@@ -21,6 +23,7 @@ async function request<T>(
       "Content-Type": "application/json",
       ...options.headers,
     },
+    credentials: "include",
   });
 
   const data = await response.json();
