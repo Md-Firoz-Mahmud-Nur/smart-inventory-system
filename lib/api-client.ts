@@ -14,8 +14,10 @@ async function request<T>(
   options: RequestInit = {},
 ): Promise<T> {
   const baseUrl =
-    process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
   const url = `${baseUrl}${endpoint.startsWith("/") ? "" : "/"}${endpoint}`;
+
+  console.log(baseUrl);
 
   const response = await fetch(url, {
     ...options,
@@ -27,6 +29,8 @@ async function request<T>(
   });
 
   const data = await response.json();
+
+  console.log(response);
 
   if (!response.ok) {
     throw new APIError(
