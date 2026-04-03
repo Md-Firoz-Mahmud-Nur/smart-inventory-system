@@ -1,92 +1,78 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { getUserFromToken } from "@/lib/auth";
-import { CreateCategorySchema } from "@/lib/validators";
+import { prisma } from "@/lib/db";
+import { verifyAuth } from "@/lib/middleware";
 import { NextRequest, NextResponse } from "next/server";
-import { categoryService } from "./category.service";
+import { z } from "zod";
 
-export async function GET(request: NextRequest) {
+const categorySchema = z.object({
+  name: z.string().min(1, "Category name is required"),
+});
+
+export async function GET(req: NextRequest) {
   try {
-    const user = await getUserFromToken();
-
+    const user = await verifyAuth(req);
     if (!user) {
-      return NextResponse.json(
-        { success: false, message: "Unauthorized" },
-        { status: 401 },
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const categories = await categoryService.getCategories(user.userId);
+    const categories = await prisma.category.findMany({
+      where: { userId: user.id },
+      include: { _count: { select: { products: true } } },
+    });
 
+    return NextResponse.json(categories);
+  } catch (error) {
+    console.error("Get categories error:", error);
     return NextResponse.json(
-      {
-        success: true,
-        data: categories,
-      },
-      { status: 200 },
-    );
-  } catch (error: any) {
-    console.error("[Get Categories Error]", error);
-
-    return NextResponse.json(
-      {
-        success: false,
-        message: error.message || "Failed to fetch categories",
-      },
+      { error: "Internal server error" },
       { status: 500 },
     );
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const user = await getUserFromToken();
+    const user = await verifyAuth(req);
+
+    console.log("aa\aa");
+
+    console.log(user);
+
+    //  ✓ Compiled in 51ms
+    // aaaa
+    // {
+    //   userId: 'cmnh9x49g000h9ohknbb3e3fn',
+    //   iat: 1775122190,
+    //   exp: 1775726990
+    // }
 
     if (!user) {
-      return NextResponse.json(
-        { success: false, message: "Unauthorized" },
-        { status: 401 },
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = await req.json();
+    const { name } = categorySchema.parse(body);
 
-    // Validate input
-    const validatedData = CreateCategorySchema.parse(body);
-
-    // Create category
-    const category = await categoryService.createCategory(
-      user.userId,
-      validatedData,
-    );
-
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Category created successfully",
-        data: category,
-      },
-      { status: 201 },
-    );
-  } catch (error: any) {
-    console.error("[Create Category Error]", error);
-
-    if (error.name === "ZodError") {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Validation failed",
-          errors: error.errors,
+    const category = await prisma.category.create({
+      data: {
+        name,
+        user: {
+          connect: { id: user.id },
         },
+      },
+    });
+
+    return NextResponse.json(category, { status: 201 });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "Invalid input", details: error.errors },
         { status: 400 },
       );
     }
-
+    console.error("Create category error:", error);
     return NextResponse.json(
-      {
-        success: false,
-        message: error.message || "Failed to create category",
-      },
-      { status: 400 },
+      { error: "Internal server error" },
+      { status: 500 },
     );
   }
 }

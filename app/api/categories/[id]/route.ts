@@ -1,138 +1,108 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { getUserFromToken } from "@/lib/auth";
-import { UpdateCategorySchema } from "@/lib/validators";
+import { prisma } from "@/lib/db";
+import { verifyAuth } from "@/lib/middleware";
 import { NextRequest, NextResponse } from "next/server";
-import { categoryService } from "../category.service";
+import { z } from "zod";
+
+const categorySchema = z.object({
+  name: z.string().min(1, "Category name is required"),
+});
 
 export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getUserFromToken();
-
+    const user = await verifyAuth(req);
     if (!user) {
-      return NextResponse.json(
-        { success: false, message: "Unauthorized" },
-        { status: 401 },
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = await params;
-    const category = await categoryService.getCategoryById(user.userId, id);
 
-    return NextResponse.json(
-      {
-        success: true,
-        data: category,
-      },
-      { status: 200 },
-    );
-  } catch (error: any) {
-    console.error("[Get Category Error]", error);
+    const category = await prisma.category.findUnique({
+      where: { id },
+      include: { products: true },
+    });
 
+    if (!category || category.userId !== user.id) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    return NextResponse.json(category);
+  } catch (error) {
+    console.error("Get category error:", error);
     return NextResponse.json(
-      {
-        success: false,
-        message: error.message || "Category not found",
-      },
-      { status: error.message?.includes("unauthorized") ? 403 : 404 },
+      { error: "Internal server error" },
+      { status: 500 }
     );
   }
 }
 
 export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getUserFromToken();
-
+    const user = await verifyAuth(req);
     if (!user) {
-      return NextResponse.json(
-        { success: false, message: "Unauthorized" },
-        { status: 401 },
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = await params;
-    const body = await request.json();
+    const body = await req.json();
+    const { name } = categorySchema.parse(body);
 
-    // Validate input
-    const validatedData = UpdateCategorySchema.parse(body);
-
-    // Update category
-    const category = await categoryService.updateCategory(
-      user.userId,
-      id,
-      validatedData,
-    );
-
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Category updated successfully",
-        data: category,
-      },
-      { status: 200 },
-    );
-  } catch (error: any) {
-    console.error("[Update Category Error]", error);
-
-    if (error.name === "ZodError") {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Validation failed",
-          errors: error.errors,
-        },
-        { status: 400 },
-      );
+    const category = await prisma.category.findUnique({ where: { id } });
+    if (!category || category.userId !== user.id) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
+    const updated = await prisma.category.update({
+      where: { id },
+      data: { name },
+    });
+
+    return NextResponse.json(updated);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "Invalid input", details: error.errors },
+        { status: 400 }
+      );
+    }
+    console.error("Update category error:", error);
     return NextResponse.json(
-      {
-        success: false,
-        message: error.message || "Failed to update category",
-      },
-      { status: error.message?.includes("unauthorized") ? 403 : 400 },
+      { error: "Internal server error" },
+      { status: 500 }
     );
   }
 }
 
 export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getUserFromToken();
-
+    const user = await verifyAuth(req);
     if (!user) {
-      return NextResponse.json(
-        { success: false, message: "Unauthorized" },
-        { status: 401 },
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = await params;
-    await categoryService.deleteCategory(user.userId, id);
 
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Category deleted successfully",
-      },
-      { status: 200 },
-    );
-  } catch (error: any) {
-    console.error("[Delete Category Error]", error);
+    const category = await prisma.category.findUnique({ where: { id } });
+    if (!category || category.userId !== user.id) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
 
+    await prisma.category.delete({ where: { id } });
+
+    return NextResponse.json({ message: "Category deleted" });
+  } catch (error) {
+    console.error("Delete category error:", error);
     return NextResponse.json(
-      {
-        success: false,
-        message: error.message || "Failed to delete category",
-      },
-      { status: error.message?.includes("unauthorized") ? 403 : 400 },
+      { error: "Internal server error" },
+      { status: 500 }
     );
   }
 }
