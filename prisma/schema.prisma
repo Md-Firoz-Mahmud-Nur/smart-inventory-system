@@ -1,121 +1,122 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
+  // url      = env("PRISMA_DATABASE_URL")
 }
 
 model User {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   email     String   @unique
+  name      String
   password  String
-  name      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  products      Product[]
-  orders        Order[]
-  restockQueues RestockQueue[]
-  activityLogs  ActivityLog[]
+  categories   Category[]
+  products     Product[]
+  orders       Order[]
+  activityLogs ActivityLog[]
 
-  @@index([email])
+  @@map("users")
 }
 
 model Category {
-  id          String   @id @default(uuid())
-  name        String   @unique
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  products Product[]
-}
-
-model Product {
-  id          String   @id @default(uuid())
-  name        String
-  description String?
-  sku         String   @unique
-  price       Float
-  stock       Int
-  categoryId  String
-  userId      String
-  status      String   @default("active") // active, inactive
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  category      Category       @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  orderItems    OrderItem[]
-  restockQueues RestockQueue[]
-
-  @@index([userId, status])
-  @@index([categoryId])
-  @@index([sku])
-}
-
-model Order {
-  id          String   @id @default(uuid())
-  userId      String
-  status      String   @default("pending") // pending, confirmed, shipped, delivered, cancelled
-  totalAmount Float
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items      OrderItem[]
-  activities ActivityLog[]
-
-  @@index([userId, createdAt])
-  @@index([status])
-}
-
-model OrderItem {
-  id        String   @id @default(uuid())
-  orderId   String
-  productId String
-  quantity  Int
-  unitPrice Float
-  createdAt DateTime @default(now())
-
-  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@index([orderId, productId])
-}
-
-model RestockQueue {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   userId    String
-  productId String
-  priority  String   @default("medium") // high, medium, low
-  status    String   @default("pending") // pending, completed
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  products Product[]
 
-  @@index([userId, priority, status])
+  @@index([userId])
+  @@map("categories")
+}
+
+model Product {
+  id                 String   @id @default(cuid())
+  userId             String
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId         String
+  category           Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  name               String
+  price              Float
+  stock              Int
+  minimumStockThreshold Int    @default(5)
+  status             String   @default("Active") // Active, Out of Stock
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  orderItems    OrderItem[]
+  restockQueue  RestockQueue?
+
+  @@index([userId])
+  @@index([categoryId])
+  @@index([status])
+  @@map("products")
+}
+
+model Order {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  customerName  String
+  totalPrice    Float    @default(0)
+  status        String   @default("Pending") // Pending, Confirmed, Shipped, Delivered, Cancelled
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  orderItems OrderItem[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int
+  price     Float
+  createdAt DateTime @default(now())
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+model RestockQueue {
+  id        String   @id @default(cuid())
+  productId String   @unique
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  priority  String   @default("Medium") // High, Medium, Low
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([priority])
+  @@map("restock_queue")
 }
 
 model ActivityLog {
-  id         String   @id @default(uuid())
-  userId     String
-  actionType String // ORDER_CREATED, ORDER_CONFIRMED, PRODUCT_ADDED, STOCK_UPDATED, etc.
-  targetId   String? // Reference to affected product/order
-  targetType String // ORDER, PRODUCT, STOCK
-  metadata   Json? // Additional context like quantities, old/new values
-  createdAt  DateTime @default(now())
+  id       String   @id @default(cuid())
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action   String // "Order Created", "Stock Updated", etc.
+  orderId  String?
+  productId String?
+  details  String?
+  createdAt DateTime @default(now())
 
-  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  order Order? @relation(fields: [targetId], references: [id], onDelete: SetNull)
-
-  @@index([userId, createdAt])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("activity_logs")
 }
