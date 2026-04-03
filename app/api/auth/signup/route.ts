@@ -1,51 +1,66 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { SignupSchema } from "@/lib/validators";
+import { generateToken, hashPassword } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
-import { authService } from "../auth.service";
+import { z } from "zod";
 
-export async function POST(request: NextRequest) {
+const signupSchema = z.object({
+  email: z.string().email(),
+  name: z.string().min(2),
+  password: z.string().min(6),
+});
+
+export async function POST(req: NextRequest) {
   try {
+    const body = await req.json();
+    const { email, name, password } = signupSchema.parse(body);
 
-    console.log(request);
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    });
 
-    const body = await request.json();
-
-    console.log(body);
-
-    // Validate input
-    const validatedData = SignupSchema.parse(body);
-
-    // Sign up user
-    const user = await authService.signup(validatedData);
-
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Account created successfully",
-        user,
-      },
-      { status: 201 },
-    );
-  } catch (error: any) {
-    console.error("[Signup Error]", error);
-
-    if (error.name === "ZodError") {
+    if (existingUser) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Validation failed",
-          errors: error.errors,
-        },
+        { error: "User already exists" },
         { status: 400 },
       );
     }
 
-    return NextResponse.json(
-      {
-        success: false,
-        message: error.message || "Signup failed",
+    const hashedPassword = await hashPassword(password);
+
+    const user = await prisma.user.create({
+      data: {
+        email,
+        name,
+        password: hashedPassword,
       },
-      { status: 400 },
+    });
+
+    const token = generateToken(user.id);
+
+    const response = NextResponse.json(
+      { user: { id: user.id, email: user.email, name: user.name }, token },
+      { status: 201 },
+    );
+
+    response.cookies.set("auth_token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60,
+    });
+
+    return response;
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "Invalid input", details: error.errors },
+        { status: 400 },
+      );
+    }
+    console.error("Signup error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
     );
   }
 }
