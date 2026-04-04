@@ -1,138 +1,164 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import { prisma } from "@/lib/db";
+import { verifyAuth } from "@/lib/middleware";
 import { NextRequest, NextResponse } from "next/server";
-import { getUserFromToken } from "@/lib/auth";
-import { productService } from "../product.service";
-import { UpdateProductSchema } from "@/lib/validators";
+import { z } from "zod";
+
+const productUpdateSchema = z.object({
+  name: z.string().min(1).optional(),
+  categoryId: z.string().min(1).optional(),
+  price: z.number().min(0).optional(),
+  stock: z.number().int().min(0).optional(),
+  minimumStockThreshold: z.number().int().min(0).optional(),
+  status: z.enum(["Active", "Out of Stock"]).optional(),
+});
 
 export async function GET(
-  request: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const user = await getUserFromToken();
-
+    const user = await verifyAuth(req);
     if (!user) {
-      return NextResponse.json(
-        { success: false, message: "Unauthorized" },
-        { status: 401 },
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = await params;
-    const product = await productService.getProductById(user.userId, id);
 
-    return NextResponse.json(
-      {
-        success: true,
-        data: product,
-      },
-      { status: 200 },
-    );
-  } catch (error: any) {
-    console.error("[Get Product Error]", error);
+    const product = await prisma.product.findUnique({
+      where: { id },
+      include: { category: true, restockQueue: true, orderItems: true },
+    });
 
+    if (!product || product.userId !== user.id) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    return NextResponse.json(product);
+  } catch (error) {
+    console.error("Get product error:", error);
     return NextResponse.json(
-      {
-        success: false,
-        message: error.message || "Product not found",
-      },
-      { status: error.message?.includes("unauthorized") ? 403 : 404 },
+      { error: "Internal server error" },
+      { status: 500 },
     );
   }
 }
 
 export async function PUT(
-  request: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const user = await getUserFromToken();
-
+    const user = await verifyAuth(req);
     if (!user) {
-      return NextResponse.json(
-        { success: false, message: "Unauthorized" },
-        { status: 401 },
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = await params;
-    const body = await request.json();
+    const body = await req.json();
+    const updates = productUpdateSchema.parse(body);
 
-    // Validate input
-    const validatedData = UpdateProductSchema.parse(body);
+    const product = await prisma.product.findUnique({ where: { id } });
+    if (!product || product.userId !== user.id) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
 
-    // Update product
-    const product = await productService.updateProduct(
-      user.userId,
-      id,
-      validatedData,
-    );
+    // If categoryId is being updated, verify it belongs to user
+    if (updates.categoryId) {
+      const category = await prisma.category.findUnique({
+        where: { id: updates.categoryId },
+      });
+      if (!category || category.userId !== user.id) {
+        return NextResponse.json(
+          { error: "Category not found" },
+          { status: 404 },
+        );
+      }
+    }
 
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Product updated successfully",
-        data: product,
-      },
-      { status: 200 },
-    );
-  } catch (error: any) {
-    console.error("[Update Product Error]", error);
+    const updated = await prisma.product.update({
+      where: { id },
+      data: updates,
+      include: { category: true, restockQueue: true },
+    });
 
-    if (error.name === "ZodError") {
+    // Handle restock queue updates based on new stock
+    if (updates.stock !== undefined) {
+      const threshold =
+        updates.minimumStockThreshold ?? product.minimumStockThreshold;
+      const existingQueueItem = await prisma.restockQueue.findUnique({
+        where: { productId: id },
+      });
+
+      if (updates.stock < threshold && !existingQueueItem) {
+        const priority =
+          updates.stock === 0
+            ? "High"
+            : updates.stock <= threshold / 2
+              ? "Medium"
+              : "Low";
+
+        await prisma.restockQueue.create({
+          data: { productId: id, priority },
+        });
+
+        // ✅ Activity Log
+        await prisma.activityLog.create({
+          data: {
+            userId: user.id,
+            action: "Added to Restock Queue",
+            productId: id,
+            details: `${product.name} added to restock queue (Priority: ${priority})`,
+          },
+        });
+      } else if (updates.stock >= threshold && existingQueueItem) {
+        // Remove from queue
+        await prisma.restockQueue.delete({
+          where: { productId: id },
+        });
+      }
+    }
+
+    return NextResponse.json(updated);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Validation failed",
-          errors: error.errors,
-        },
+        { error: "Invalid input", details: error.errors },
         { status: 400 },
       );
     }
-
+    console.error("Update product error:", error);
     return NextResponse.json(
-      {
-        success: false,
-        message: error.message || "Failed to update product",
-      },
-      { status: error.message?.includes("unauthorized") ? 403 : 400 },
+      { error: "Internal server error" },
+      { status: 500 },
     );
   }
 }
 
 export async function DELETE(
-  request: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const user = await getUserFromToken();
-
+    const user = await verifyAuth(req);
     if (!user) {
-      return NextResponse.json(
-        { success: false, message: "Unauthorized" },
-        { status: 401 },
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = await params;
-    await productService.deleteProduct(user.userId, id);
 
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Product deleted successfully",
-      },
-      { status: 200 },
-    );
-  } catch (error: any) {
-    console.error("[Delete Product Error]", error);
+    const product = await prisma.product.findUnique({ where: { id } });
+    if (!product || product.userId !== user.id) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
 
+    await prisma.product.delete({ where: { id } });
+
+    return NextResponse.json({ message: "Product deleted" });
+  } catch (error) {
+    console.error("Delete product error:", error);
     return NextResponse.json(
-      {
-        success: false,
-        message: error.message || "Failed to delete product",
-      },
-      { status: error.message?.includes("unauthorized") ? 403 : 400 },
+      { error: "Internal server error" },
+      { status: 500 },
     );
   }
 }

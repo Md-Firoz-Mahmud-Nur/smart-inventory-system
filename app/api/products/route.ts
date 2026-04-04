@@ -1,99 +1,120 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { getUserFromToken } from "@/lib/auth";
-import { CreateProductSchema } from "@/lib/validators";
+import { prisma } from "@/lib/db";
+import { verifyAuth } from "@/lib/middleware";
 import { NextRequest, NextResponse } from "next/server";
-import { productService } from "./product.service";
+import { z } from "zod";
 
-export async function GET(request: NextRequest) {
+const productSchema = z.object({
+  name: z.string().min(1, "Product name is required"),
+  categoryId: z.string().min(1, "Category is required"),
+  price: z.number().min(0, "Price must be positive"),
+  stock: z.number().int().min(0, "Stock must be non-negative"),
+  minimumStockThreshold: z.number().int().min(0).default(5),
+});
+
+export async function GET(req: NextRequest) {
   try {
-    const user = await getUserFromToken();
-
+    const user = await verifyAuth(req);
     if (!user) {
-      return NextResponse.json(
-        { success: false, message: "Unauthorized" },
-        { status: 401 },
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url);
-    const status = searchParams.get("status");
+    const { searchParams } = new URL(req.url);
     const categoryId = searchParams.get("categoryId");
+    const status = searchParams.get("status");
 
-    const products = await productService.getProducts(user.userId, {
-      status: status || undefined,
-      categoryId: categoryId || undefined,
+    const where: any = { userId: user.id };
+    if (categoryId) where.categoryId = categoryId;
+    if (status) where.status = status;
+
+    const products = await prisma.product.findMany({
+      where,
+      include: { category: true, restockQueue: true },
     });
 
+    return NextResponse.json(products);
+  } catch (error) {
+    console.error("Get products error:", error);
     return NextResponse.json(
-      {
-        success: true,
-        data: products,
-      },
-      { status: 200 },
-    );
-  } catch (error: any) {
-    console.error("[Get Products Error]", error);
-
-    return NextResponse.json(
-      {
-        success: false,
-        message: error.message || "Failed to fetch products",
-      },
+      { error: "Internal server error" },
       { status: 500 },
     );
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const user = await getUserFromToken();
-
+    const user = await verifyAuth(req);
     if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const { name, categoryId, price, stock, minimumStockThreshold } =
+      productSchema.parse(body);
+
+    // Verify category belongs to user
+    const category = await prisma.category.findUnique({
+      where: { id: categoryId },
+    });
+    if (!category || category.userId !== user.id) {
       return NextResponse.json(
-        { success: false, message: "Unauthorized" },
-        { status: 401 },
+        { error: "Category not found" },
+        { status: 404 },
       );
     }
 
-    const body = await request.json();
-
-    // Validate input
-    const validatedData = CreateProductSchema.parse(body);
-
-    // Create product
-    const product = await productService.createProduct(
-      user.userId,
-      validatedData,
-    );
-
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Product created successfully",
-        data: product,
+    const product = await prisma.product.create({
+      data: {
+        userId: user.id,
+        categoryId,
+        name,
+        price,
+        stock,
+        minimumStockThreshold,
+        status: stock === 0 ? "Out of Stock" : "Active",
       },
-      { status: 201 },
-    );
-  } catch (error: any) {
-    console.error("[Create Product Error]", error);
+      include: { category: true },
+    });
 
-    if (error.name === "ZodError") {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Validation failed",
-          errors: error.errors,
+    // Add to restock queue if below threshold
+    if (product.stock < product.minimumStockThreshold) {
+      const priority =
+        product.stock === 0
+          ? "High"
+          : product.stock <= product.minimumStockThreshold / 2
+            ? "Medium"
+            : "Low";
+
+      await prisma.restockQueue.create({
+        data: {
+          productId: product.id,
+          priority,
         },
+      });
+
+      // ✅ Activity Log
+      await prisma.activityLog.create({
+        data: {
+          userId: user.id,
+          action: "Added to Restock Queue",
+          productId: product.id,
+          details: `${product.name} added to restock queue (Priority: ${priority})`,
+        },
+      });
+    }
+
+    return NextResponse.json(product, { status: 201 });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "Invalid input", details: error.errors },
         { status: 400 },
       );
     }
-
+    console.error("Create product error:", error);
     return NextResponse.json(
-      {
-        success: false,
-        message: error.message || "Failed to create product",
-      },
-      { status: 400 },
+      { error: "Internal server error" },
+      { status: 500 },
     );
   }
 }
