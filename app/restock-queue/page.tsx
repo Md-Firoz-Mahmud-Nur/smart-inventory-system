@@ -1,222 +1,225 @@
 "use client";
 
-import { GlassCard } from "@/components/ui/glass-card";
-import { NeomorphButton } from "@/components/ui/neomorph-button";
-import { TableRowSkeleton } from "@/components/ui/skeleton";
-import { apiClient } from "@/lib/api-client";
-import gsap from "gsap";
-import React, { useEffect, useState } from "react";
-import useSWR from "swr";
+import { DashboardNav } from "@/app/components/dashboard-nav";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useEffect, useState } from "react";
 
-interface RestockItem {
+type QueueItem = {
   id: string;
-  productId: string;
-  status: string;
   priority: string;
   product: {
     id: string;
     name: string;
-    sku: string;
     stock: number;
-    price: number;
+    minimumStockThreshold: number;
+    category: {
+      name: string;
+    };
   };
-  createdAt: string;
-}
-
-const priorityColors: Record<string, string> = {
-  high: "bg-red-500/20 text-red-600 dark:text-red-400",
-  medium: "bg-orange-500/20 text-orange-600 dark:text-orange-400",
-  low: "bg-blue-500/20 text-blue-600 dark:text-blue-400",
 };
 
 export default function RestockQueuePage() {
-  const [selectedPriority, setSelectedPriority] = useState<string>("");
-  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [queue, setQueue] = useState<QueueItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [priorityFilter, setPriorityFilter] = useState("");
 
-  const { data, isLoading, mutate } = useSWR(
-    `/api/restock-queue${selectedPriority ? `?priority=${selectedPriority}` : ""}`,
-    () =>
-      apiClient.getRestockQueue({
-        priority: selectedPriority || undefined,
-      }),
-    { revalidateOnFocus: false },
-  );
+  // 🔥 Modal states
+  const [open, setOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<QueueItem | null>(null);
+  const [quantity, setQuantity] = useState(1);
 
-  const items = data?.data || [];
+  // 🔹 Fetch queue
+  const fetchQueue = async () => {
+    const query = priorityFilter ? `?priority=${priorityFilter}` : "";
 
-  useEffect(() => {
-    if (containerRef.current && !isLoading) {
-      gsap.from(containerRef.current.children, {
-        opacity: 0,
-        y: 10,
-        duration: 0.3,
-        stagger: 0.05,
-        ease: "power2.out",
-      });
-    }
-  }, [isLoading]);
+    const res = await fetch(`/api/restock-queue${query}`, {
+      credentials: "include",
+    });
 
-  const handleRemove = async (id: string) => {
-    try {
-      await apiClient.removeFromRestockQueue(id);
-      mutate();
-    } catch (error) {
-      console.error("Failed to remove from queue:", error);
-    }
+    const data = await res.json();
+    setQueue(data);
   };
 
-  const handleMarkCompleted = async (id: string) => {
-    try {
-      await apiClient.updateRestockStatus(id, { status: "completed" });
-      mutate();
-    } catch (error) {
-      console.error("Failed to update status:", error);
-    }
+  useEffect(() => {
+    fetchQueue();
+  }, [priorityFilter]);
+
+  // 🔹 Remove item
+  const handleRemove = async (id: string) => {
+    const confirmDelete = confirm("Remove from restock queue?");
+    if (!confirmDelete) return;
+
+    setLoading(true);
+
+    await fetch(`/api/restock-queue/${id}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+
+    fetchQueue();
+    setLoading(false);
+  };
+
+  // 🔹 Open restock modal
+  const openRestock = (item: QueueItem) => {
+    setSelectedItem(item);
+    setQuantity(1);
+    setOpen(true);
+  };
+
+  // 🔹 Handle restock
+  const handleRestock = async () => {
+    if (!selectedItem) return;
+
+    setLoading(true);
+
+    await fetch(`/api/restock-queue/${selectedItem.id}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        productId: selectedItem.product.id,
+        quantity,
+      }),
+    });
+
+    setOpen(false);
+    setSelectedItem(null);
+    setQuantity(1);
+
+    fetchQueue();
+    setLoading(false);
+  };
+
+  // 🎨 Priority badge
+  const getPriorityColor = (priority: string) => {
+    if (priority === "High") return "bg-red-100 text-red-700";
+    if (priority === "Medium") return "bg-yellow-100 text-yellow-700";
+    return "bg-green-100 text-green-700";
   };
 
   return (
-    <main className="min-h-screen bg-linear-to-br from-background to-(--secondary)/10 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground">
-            Restock Queue
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Products requiring restocking, prioritized by urgency
-          </p>
-        </div>
+    <div className="flex min-h-screen bg-slate-100">
+      <DashboardNav />
 
-        {/* Filters */}
-        <GlassCard className="p-4 mb-8">
-          <div className="flex flex-wrap gap-2">
-            <NeomorphButton
-              variant={selectedPriority === "" ? "primary" : "ghost"}
-              size="sm"
-              onClick={() => setSelectedPriority("")}>
-              All
-            </NeomorphButton>
-            <NeomorphButton
-              variant={selectedPriority === "high" ? "primary" : "ghost"}
-              size="sm"
-              onClick={() => setSelectedPriority("high")}>
-              High Priority
-            </NeomorphButton>
-            <NeomorphButton
-              variant={selectedPriority === "medium" ? "primary" : "ghost"}
-              size="sm"
-              onClick={() => setSelectedPriority("medium")}>
-              Medium Priority
-            </NeomorphButton>
-            <NeomorphButton
-              variant={selectedPriority === "low" ? "primary" : "ghost"}
-              size="sm"
-              onClick={() => setSelectedPriority("low")}>
-              Low Priority
-            </NeomorphButton>
+      <main className="flex-1 overflow-auto">
+        <div className="p-8">
+          {/* Header */}
+          <div className="mb-6 flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold">Restock Queue</h1>
+              <p className="text-slate-600">
+                Monitor and manage low stock items
+              </p>
+            </div>
+
+            {/* Filter */}
+            <select
+              className="border rounded px-3 py-2"
+              value={priorityFilter}
+              onChange={(e) => setPriorityFilter(e.target.value)}>
+              <option value="">All</option>
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
+              <option value="Low">Low</option>
+            </select>
           </div>
-        </GlassCard>
 
-        {/* Restock Queue Table */}
-        <GlassCard className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="px-6 py-4 text-left font-semibold text-foreground">
-                    Product Name
-                  </th>
-                  <th className="px-6 py-4 text-left font-semibold text-foreground">
-                    SKU
-                  </th>
-                  <th className="px-6 py-4 text-left font-semibold text-foreground">
-                    Current Stock
-                  </th>
-                  <th className="px-6 py-4 text-left font-semibold text-foreground">
-                    Priority
-                  </th>
-                  <th className="px-6 py-4 text-left font-semibold text-foreground">
-                    Added
-                  </th>
-                  <th className="px-6 py-4 text-right font-semibold text-foreground">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody ref={containerRef}>
-                {isLoading ? (
-                  <>
-                    <TableRowSkeleton />
-                    <TableRowSkeleton />
-                    <TableRowSkeleton />
-                  </>
-                ) : items.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="px-6 py-12 text-center text-muted-foreground">
-                      {selectedPriority
-                        ? `No ${selectedPriority} priority items`
-                        : "Restock queue is empty!"}
-                    </td>
-                  </tr>
-                ) : (
-                  items.map((item: RestockItem) => (
-                    <tr
+          {/* List */}
+          <div className="bg-white rounded-lg border p-6">
+            {queue.length === 0 ? (
+              <p className="text-center text-slate-500">
+                No items in restock queue 🎉
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {[...queue]
+                  .sort((a, b) => a.product.stock - b.product.stock)
+                  .map((item) => (
+                    <div
                       key={item.id}
-                      className="border-b border-border hover:bg-[var(--muted)]/30 transition-colors">
-                      <td className="px-6 py-4 font-medium text-foreground">
-                        {item.product.name}
-                      </td>
-                      <td className="px-6 py-4 text-sm font-mono text-muted-foreground">
-                        {item.product.sku}
-                      </td>
-                      <td className="px-6 py-4">
+                      className="flex justify-between items-center border-b pb-3">
+                      <div>
+                        <p className="font-semibold">{item.product.name}</p>
+                        <p className="text-sm text-slate-500">
+                          Category: {item.product.category.name}
+                        </p>
+                        <p className="text-sm text-red-500">
+                          Only {item.product.stock} items available in stock
+                        </p>
+                        <p className="text-sm text-slate-500">
+                          Min: {item.product.minimumStockThreshold}
+                        </p>
+                      </div>
+
+                      <div className="flex flex-col items-center gap-3">
                         <span
-                          className={`inline-block px-3 py-1 rounded font-semibold text-sm ${
-                            item.product.stock === 0
-                              ? "bg-red-500/20 text-red-600 dark:text-red-400"
-                              : item.product.stock < 5
-                                ? "bg-orange-500/20 text-orange-600 dark:text-orange-400"
-                                : "bg-green-500/20 text-green-600 dark:text-green-400"
-                          }`}>
-                          {item.product.stock} units
+                          className={`px-2 py-1 text-xs rounded ${getPriorityColor(
+                            item.priority,
+                          )}`}>
+                          {item.priority}
                         </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-block text-xs font-semibold px-3 py-1 rounded-full ${
-                            priorityColors[item.priority] || priorityColors.low
-                          }`}>
-                          {item.priority.charAt(0).toUpperCase() +
-                            item.priority.slice(1)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-muted-foreground">
-                        {new Date(item.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 text-right space-x-2 flex justify-end">
-                        <NeomorphButton
-                          variant="secondary"
+
+                        {/* 🔥 Restock Button */}
+                        <Button size="sm" onClick={() => openRestock(item)}>
+                          Restock
+                        </Button>
+
+                        {/* Remove */}
+                        <Button
                           size="sm"
-                          onClick={() => handleMarkCompleted(item.id)}>
-                          Completed
-                        </NeomorphButton>
-                        <NeomorphButton
-                          variant="ghost"
-                          size="sm"
+                          variant="destructive"
+                          disabled={loading}
                           onClick={() => handleRemove(item.id)}>
                           Remove
-                        </NeomorphButton>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
           </div>
-        </GlassCard>
-      </div>
-    </main>
+        </div>
+      </main>
+
+      {/* 🔥 RESTOCK MODAL */}
+      {open && selectedItem && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40">
+          <div className="bg-white w-full max-w-md p-6 rounded-lg shadow-lg">
+            <h2 className="text-xl font-semibold mb-4">Restock Product</h2>
+
+            <p className="font-medium">{selectedItem.product.name}</p>
+
+            <p className="text-sm text-slate-500 mb-4">
+              Current Stock: {selectedItem.product.stock}
+            </p>
+
+            <Input
+              type="number"
+              min="1"
+              value={quantity}
+              onChange={(e) => setQuantity(Number(e.target.value))}
+            />
+
+            <div className="flex justify-end gap-2 mt-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setOpen(false);
+                  setSelectedItem(null);
+                  setQuantity(1);
+                }}>
+                Cancel
+              </Button>
+
+              <Button onClick={handleRestock} disabled={loading}>
+                {loading ? "Updating..." : "Confirm Restock"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
