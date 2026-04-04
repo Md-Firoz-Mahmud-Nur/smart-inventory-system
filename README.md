@@ -165,3 +165,11 @@ npm run dev
 
 - Email: `demo@example.com`
 - Password: `123456`
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Support
+
+For issues and questions, please open an GitHub issue or contact support.
