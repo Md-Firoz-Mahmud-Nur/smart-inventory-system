@@ -82,3 +82,43 @@ A production-ready web application to manage product inventory, process customer
 - **Form Handling**: React Hook Form + Zod validation
 - **Charts**: Recharts for data visualization
 - **Icons**: Lucide React
+
+### Backend
+
+- **Runtime**: Node.js with Next.js API Routes
+- **Database**: PostgreSQL with Prisma ORM
+- **Database Client**: Neon serverless PostgreSQL
+- **Authentication**: JWT + bcryptjs password hashing
+- **Validation**: Zod schema validation
+- **Database Migrations**: Prisma migrations with strategic indexing
+
+## Project Structure
+
+```
+├── app/
+│   ├── api/                          # API routes
+│   │   ├── auth/                     # Authentication endpoints
+│   │   ├── products/                 # Product management
+│   │   ├── categories/               # Category management
+│   │   ├── orders/                   # Order processing
+│   │   ├── restock-queue/            # Restock management
+│   │   ├── activity-logs/            # Activity tracking
+│   │   ├── dashboard/                # Dashboard metrics
+│   │   └── init/                     # Database initialization
+│   ├── auth/                         # Login and registration pages
+│   ├── dashboard/                    # Protected dashboard
+│   ├── products/page.tsx             # Products management page
+│   ├── categories/page.tsx           # Categories management page
+│   ├── orders/page.tsx               # Orders listing and management
+│   ├── restock-queue/page.tsx        # Restock queue management
+│   ├── page.tsx                      # Root redirect to dashboard
+│   ├── layout.tsx                    # Root layout
+├── lib/
+│   ├── auth.ts                       # Auth utilities (JWT, bcrypt)
+│   ├── db.ts                         # Prisma client instance
+│   ├── middleware.ts                 # Auth middleware & utilities
+│   └── utils.ts                      # Helper functions
+├── prisma/
+│   ├── schema.prisma                 # Database schema with 7 models
+├── middleware.ts                     # Next.js middleware for route protection
+```
