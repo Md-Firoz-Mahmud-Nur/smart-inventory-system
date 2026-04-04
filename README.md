@@ -122,3 +122,46 @@ A production-ready web application to manage product inventory, process customer
 │   ├── schema.prisma                 # Database schema with 7 models
 ├── middleware.ts                     # Next.js middleware for route protection
 ```
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- PostgreSQL 12+ (or Neon account for serverless)
+
+### Installation
+
+1. **Clone the repository**
+
+```bash
+git clone https://github.com/Md-Firoz-Mahmud-Nur/smart-inventory-system
+cd smart-inventory-system
+```
+
+2. **Install dependencies**
+
+```bash
+npm install
+```
+
+3. **Set up environment variables**
+
+Create a `.env.local` file in the root directory:
+
+```
+DATABASE_URL=postgresql://user:password@localhost:5432/inventory_db
+JWT_SECRET=your-super-secret-jwt-key-change-in-production
+NODE_ENV=development
+```
+
+4. **Start development server**
+
+```bash
+npm run dev
+```
+
+**Demo credentials:**
+
+- Email: `demo@example.com`
+- Password: `123456`
