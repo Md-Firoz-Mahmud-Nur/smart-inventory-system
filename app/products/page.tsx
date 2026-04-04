@@ -1,199 +1,243 @@
 "use client";
 
-import { GlassCard } from "@/components/ui/glass-card";
-import { NeomorphButton } from "@/components/ui/neomorph-button";
-import { ProductSkeleton } from "@/components/ui/skeleton";
-import { apiClient } from "@/lib/api-client";
-import gsap from "gsap";
-import Link from "next/link";
-import React, { useEffect, useState } from "react";
-import useSWR from "swr";
+import { DashboardNav } from "@/app/components/dashboard-nav";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useEffect, useState } from "react";
 
-interface Product {
+type Category = {
   id: string;
   name: string;
-  description: string;
-  price: number;
-  stock: number;
-  sku: string;
-  category: { id: string; name: string };
-  status: string;
-  createdAt: string;
-}
+};
 
 export default function ProductsPage() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
 
-  const { data, isLoading, mutate } = useSWR(
-    "/api/products",
-    () => apiClient.getProducts(),
-    { revalidateOnFocus: false },
-  );
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [form, setForm] = useState({
+    name: "",
+    categoryId: "",
+    price: "",
+    stock: "",
+    minimumStockThreshold: "5",
+  });
 
-  const { data: categoriesData } = useSWR(
-    "/api/categories",
-    () => apiClient.getCategories(),
-    { revalidateOnFocus: false },
-  );
+  const [error, setError] = useState("");
 
-  const products = data?.data || [];
-  const categories = categoriesData?.data || [];
+  type Product = {
+    id: string;
+    name: string;
+    price: number;
+    stock: number;
+    category: { id: string; name: string };
+    status: string;
+  };
 
-  // Filter products
-  const filteredProducts = products.filter(
-    (p: Product) =>
-      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.sku.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  const [products, setProducts] = useState<Product[]>([]);
 
-  // Animation on mount
-  useEffect(() => {
-    if (containerRef.current && !isLoading) {
-      gsap.from(containerRef.current.children, {
-        opacity: 0,
-        y: 20,
-        duration: 0.4,
-        stagger: 0.05,
-        ease: "power2.out",
+  const fetchProducts = async () => {
+    try {
+      const res = await fetch("/api/products", {
+        credentials: "include",
       });
+      const data = await res.json();
+      setProducts(data);
+    } catch (err) {
+      console.error(err);
     }
-  }, [isLoading, filteredProducts.length]);
+  };
+
+  // Fetch categories for dropdown
+  const fetchCategories = async () => {
+    const res = await fetch("/api/categories", {
+      credentials: "include",
+    });
+    const data = await res.json();
+    setCategories(data);
+  };
+
+  useEffect(() => {
+    fetchCategories();
+    fetchProducts();
+  }, []);
+
+  // Handle create product
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          name: form.name,
+          categoryId: form.categoryId,
+          price: Number(form.price),
+          stock: Number(form.stock),
+          minimumStockThreshold: Number(form.minimumStockThreshold),
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Failed to create product");
+        return;
+      }
+
+      await fetchProducts();
+
+      // reset form
+      setForm({
+        name: "",
+        categoryId: "",
+        price: "",
+        stock: "",
+        minimumStockThreshold: "5",
+      });
+
+      setOpen(false);
+    } catch (err) {
+      console.error(err);
+      setError("Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <main className="min-h-screen bg-linear-to-br from-background to-(--secondary)/10 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground">
-              Products
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Manage your product catalog and inventory
-            </p>
-          </div>
-          <Link href="/products/create">
-            <NeomorphButton variant="primary" size="lg">
-              + Add Product
-            </NeomorphButton>
-          </Link>
-        </div>
+    <div className="flex min-h-screen bg-slate-100">
+      <DashboardNav />
 
-        {/* Search & Filters */}
-        <GlassCard className="p-4 mb-8">
-          <div className="flex gap-4">
-            <input
-              type="text"
-              placeholder="Search by name or SKU..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1 px-4 py-2 rounded-lg border border-border bg-input text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
-        </GlassCard>
-
-        {/* Products Grid */}
-        <div
-          ref={containerRef}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {isLoading ? (
-            <>
-              <ProductSkeleton />
-              <ProductSkeleton />
-              <ProductSkeleton />
-            </>
-          ) : filteredProducts.length === 0 ? (
-            <div className="col-span-full">
-              <GlassCard className="p-12 text-center">
-                <p className="text-muted-foreground text-lg mb-4">
-                  No products found
-                </p>
-                <Link href="/products/create">
-                  <NeomorphButton variant="primary">
-                    Create your first product
-                  </NeomorphButton>
-                </Link>
-              </GlassCard>
+      <main className="flex-1 overflow-auto">
+        <div className="p-8">
+          {/* Header */}
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900">Products</h1>
+              <p className="text-slate-600 mt-1">
+                Manage your inventory products
+              </p>
             </div>
-          ) : (
-            filteredProducts.map((product: Product) => (
-              <GlassCard
-                key={product.id}
-                className="overflow-hidden hover:scale-105 transition-transform duration-300 cursor-pointer group">
-                <div className="p-6">
-                  <div className="mb-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
-                        {product.name}
-                      </h3>
+
+            <Button onClick={() => setOpen(true)}>Add Product</Button>
+          </div>
+
+          <div className="bg-white rounded-lg border border-slate-200 p-6">
+            {products.length === 0 ? (
+              <p className="text-slate-600 text-center">No products found</p>
+            ) : (
+              <div className="space-y-4">
+                {products.map((product) => (
+                  <div
+                    key={product.id}
+                    className="flex justify-between items-center border-b pb-2">
+                    <div>
+                      <h3 className="font-medium">{product.name}</h3>
+                      <p className="text-sm text-slate-500">
+                        {product.category?.name}
+                      </p>
+                    </div>
+
+                    <div className="text-right">
+                      <p className="font-semibold">${product.price}</p>
                       <span
-                        className={`text-xs font-semibold px-2 py-1 rounded ${
-                          product.stock > 10
-                            ? "bg-green-500/20 text-green-600 dark:text-green-400"
-                            : product.stock > 0
-                              ? "bg-orange-500/20 text-orange-600 dark:text-orange-400"
-                              : "bg-red-500/20 text-red-600 dark:text-red-400"
+                        className={`text-xs px-2 py-1 rounded ${
+                          product.status === "Out of Stock"
+                            ? "bg-red-100 text-red-700"
+                            : "bg-green-100 text-green-700"
                         }`}>
-                        {product.stock > 0
-                          ? `${product.stock} in stock`
-                          : "Out of stock"}
+                        Stock: {product.stock}
                       </span>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      SKU: {product.sku}
-                    </p>
                   </div>
-
-                  <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                    {product.description || "No description"}
-                  </p>
-
-                  <div className="flex justify-between items-end mb-4">
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">
-                        Category
-                      </p>
-                      <p className="text-sm font-medium text-foreground">
-                        {product.category?.name || "Uncategorized"}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-muted-foreground mb-1">
-                        Price
-                      </p>
-                      <p className="text-lg font-bold text-primary">
-                        ${product.price.toFixed(2)}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Link href={`/products/${product.id}`} className="flex-1">
-                      <NeomorphButton
-                        variant="secondary"
-                        size="sm"
-                        className="w-full">
-                        View
-                      </NeomorphButton>
-                    </Link>
-                    <Link
-                      href={`/products/${product.id}/edit`}
-                      className="flex-1">
-                      <NeomorphButton
-                        variant="ghost"
-                        size="sm"
-                        className="w-full">
-                        Edit
-                      </NeomorphButton>
-                    </Link>
-                  </div>
-                </div>
-              </GlassCard>
-            ))
-          )}
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
+
+      {/* Modal */}
+      {open && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40">
+          <div className="bg-white w-full max-w-md p-6 rounded-lg shadow-lg">
+            <h2 className="text-xl font-semibold mb-4">Add Product</h2>
+
+            <form onSubmit={handleCreate} className="space-y-4">
+              {error && <div className="text-red-600 text-sm">{error}</div>}
+
+              <Input
+                placeholder="Product Name"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                required
+              />
+
+              {/* Category Dropdown */}
+              <select
+                className="w-full border rounded-md p-2"
+                value={form.categoryId}
+                onChange={(e) =>
+                  setForm({ ...form, categoryId: e.target.value })
+                }
+                required>
+                <option value="">Select Category</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+
+              <Input
+                type="number"
+                placeholder="Price"
+                value={form.price}
+                onChange={(e) => setForm({ ...form, price: e.target.value })}
+                required
+              />
+
+              <Input
+                type="number"
+                placeholder="Stock"
+                value={form.stock}
+                onChange={(e) => setForm({ ...form, stock: e.target.value })}
+                required
+              />
+
+              <Input
+                type="number"
+                placeholder="Minimum Stock Threshold"
+                value={form.minimumStockThreshold}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    minimumStockThreshold: e.target.value,
+                  })
+                }
+              />
+
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setOpen(false)}>
+                  Cancel
+                </Button>
+
+                <Button type="submit" disabled={loading}>
+                  {loading ? "Creating..." : "Create"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
