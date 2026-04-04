@@ -52,3 +52,33 @@ A production-ready web application to manage product inventory, process customer
 - Dynamic priority calculation based on stock levels
 - One-click queue management
 - Historical restock tracking
+
+### 7. Dashboard & Analytics
+
+- Real-time statistics and KPIs
+- Today's order count and revenue metrics
+- Pending vs completed order tracking
+- Low stock item alerts
+- Recent orders with itemized details
+- Product summary with stock status
+- Visual indicators for inventory health
+
+### 8. Activity Logging
+
+- Complete audit trail of all actions
+- Detailed activity logs with action types
+- Metadata tracking for comprehensive history
+- User-scoped activity tracking
+- Latest activities visible on dashboard
+
+## Tech Stack
+
+### Frontend
+
+- **Framework**: Next.js 16 with App Router
+- **UI Framework**: React 19 with shadcn/ui components
+- **Styling**: Tailwind CSS v4 with custom theming
+- **State Management**: React Context + React Hooks with SWR
+- **Form Handling**: React Hook Form + Zod validation
+- **Charts**: Recharts for data visualization
+- **Icons**: Lucide React
