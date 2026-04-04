@@ -1,36 +1,29 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Smart Inventory & Order Management System
 
-## Getting Started
+A production-ready web application to manage product inventory, process customer orders, track stock levels, and automate restock alerts with intelligent conflict prevention and real-time analytics.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+### 1. Authentication
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- User registration and login with secure password hashing
+- JWT-based authentication with HTTP-only cookies
+- Demo user login for quick testing
+- User profile management
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 2. Product & Category Management
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Create, edit, and manage product categories
+- Define products with pricing, stock levels, and minimum thresholds
+- Track product status (Active, Out of Stock)
+- Automatic category organization
+- Product search and filtering
 
-## Learn More
+### 3. Stock Management
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Real-time inventory tracking
+- Automatic stock deduction on order confirmation
+- Out-of-stock prevention with validation
+- Minimum stock threshold alerts
+- Stock status indicators and warnings
+- Inventory level visualization on dashboard
