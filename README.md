@@ -166,6 +166,14 @@ npm run dev
 - Email: `demo@example.com`
 - Password: `123456`
 
+### Demo Data
+
+Seed the database with demo data:
+
+```bash
+curl http://localhost:3000/api/init/seed
+```
+
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
