@@ -24,13 +24,15 @@ export default function RestockQueuePage() {
   const [loading, setLoading] = useState(false);
   const [priorityFilter, setPriorityFilter] = useState("");
 
-  // 🔥 Modal states
+  const [loadingQueue, setLoadingQueue] = useState(true);
+
   const [open, setOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<QueueItem | null>(null);
   const [quantity, setQuantity] = useState(1);
 
-  // 🔹 Fetch queue
   const fetchQueue = async () => {
+    setLoadingQueue(true);
+
     const query = priorityFilter ? `?priority=${priorityFilter}` : "";
 
     const res = await fetch(`/api/restock-queue${query}`, {
@@ -39,13 +41,14 @@ export default function RestockQueuePage() {
 
     const data = await res.json();
     setQueue(data);
+
+    setLoadingQueue(false);
   };
 
   useEffect(() => {
     fetchQueue();
   }, [priorityFilter]);
 
-  // 🔹 Remove item
   const handleRemove = async (id: string) => {
     const confirmDelete = confirm("Remove from restock queue?");
     if (!confirmDelete) return;
@@ -61,14 +64,12 @@ export default function RestockQueuePage() {
     setLoading(false);
   };
 
-  // 🔹 Open restock modal
   const openRestock = (item: QueueItem) => {
     setSelectedItem(item);
     setQuantity(1);
     setOpen(true);
   };
 
-  // 🔹 Handle restock
   const handleRestock = async () => {
     if (!selectedItem) return;
 
@@ -92,7 +93,6 @@ export default function RestockQueuePage() {
     setLoading(false);
   };
 
-  // 🎨 Priority badge
   const getPriorityColor = (priority: string) => {
     if (priority === "High") return "bg-red-100 text-red-700";
     if (priority === "Medium") return "bg-yellow-100 text-yellow-700";
@@ -104,7 +104,7 @@ export default function RestockQueuePage() {
       <DashboardNav />
 
       <main className="flex-1 overflow-auto">
-        <div className="p-8">
+        <div className="p-6 max-md:pt-16">
           {/* Header */}
           <div className="mb-6 flex justify-between items-center">
             <div>
@@ -114,9 +114,8 @@ export default function RestockQueuePage() {
               </p>
             </div>
 
-            {/* Filter */}
             <select
-              className="border rounded px-3 py-2"
+              className="border rounded px-3 py-2 bg-white"
               value={priorityFilter}
               onChange={(e) => setPriorityFilter(e.target.value)}>
               <option value="">All</option>
@@ -126,9 +125,33 @@ export default function RestockQueuePage() {
             </select>
           </div>
 
-          {/* List */}
           <div className="bg-white rounded-lg border p-6">
-            {queue.length === 0 ? (
+            {loadingQueue ? (
+              <div className="space-y-4">
+                {[...Array(5)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="flex justify-between items-center border-b pb-3 animate-pulse">
+                    {/* Left */}
+                    <div className="space-y-2">
+                      <div className="flex gap-4">
+                        <div className="h-4 w-26 bg-slate-200 rounded" />
+                        <div className="h-4 w-10 bg-slate-200 rounded" />
+                      </div>
+                      <div className="h-3 w-32 bg-slate-200 rounded" />
+                      <div className="h-3 w-24 bg-slate-200 rounded" />
+                      <div className="h-3 w-48 bg-slate-200 rounded" />
+                    </div>
+
+                    {/* Right buttons */}
+                    <div className="flex flex-col gap-2">
+                      <div className="h-8 w-20 bg-slate-200 rounded" />
+                      <div className="h-8 w-20 bg-slate-200 rounded" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : queue.length === 0 ? (
               <p className="text-center text-slate-500">
                 No items in restock queue 🎉
               </p>
@@ -141,32 +164,34 @@ export default function RestockQueuePage() {
                       key={item.id}
                       className="flex justify-between items-center border-b pb-3">
                       <div>
-                        <p className="font-semibold">{item.product.name}</p>
+                        <div className="flex gap-2 items-center">
+                          <p className="font-semibold">{item.product.name}</p>
+                          <span
+                            className={`px-2 py-1 text-xs rounded ${getPriorityColor(
+                              item.priority,
+                            )}`}>
+                            {item.priority}
+                          </span>
+                        </div>
+
                         <p className="text-sm text-slate-500">
-                          Category: {item.product.category.name}
+                          {item.product.category.name}
                         </p>
-                        <p className="text-sm text-red-500">
-                          Only {item.product.stock} items available in stock
-                        </p>
+
                         <p className="text-sm text-slate-500">
                           Min: {item.product.minimumStockThreshold}
+                        </p>
+
+                        <p className="text-sm text-red-500">
+                          Only {item.product.stock} items available in stock
                         </p>
                       </div>
 
                       <div className="flex flex-col items-center gap-3">
-                        <span
-                          className={`px-2 py-1 text-xs rounded ${getPriorityColor(
-                            item.priority,
-                          )}`}>
-                          {item.priority}
-                        </span>
-
-                        {/* 🔥 Restock Button */}
                         <Button size="sm" onClick={() => openRestock(item)}>
                           Restock
                         </Button>
 
-                        {/* Remove */}
                         <Button
                           size="sm"
                           variant="destructive"
@@ -183,7 +208,6 @@ export default function RestockQueuePage() {
         </div>
       </main>
 
-      {/* 🔥 RESTOCK MODAL */}
       {open && selectedItem && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/40">
           <div className="bg-white w-full max-w-md p-6 rounded-lg shadow-lg">
