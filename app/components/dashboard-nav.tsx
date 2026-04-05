@@ -2,17 +2,17 @@
 
 import { Button } from "@/components/ui/button";
 import {
+  AlertCircle,
   LayoutDashboard,
   LogOut,
   Menu,
   Package,
   ShoppingCart,
   Tags,
-  AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 interface User {
   id: string;
@@ -107,11 +107,15 @@ export function DashboardNav() {
           <div className="px-2">
             {loading ? (
               <>
-                <p className="text-sm font-medium text-slate-700 animate-pulse">Loading...</p>
+                <p className="text-sm font-medium text-slate-700 animate-pulse">
+                  Loading...
+                </p>
               </>
             ) : (
               <>
-                <p className="text-sm font-medium text-slate-700">{user?.name}</p>
+                <p className="text-sm font-medium text-slate-700">
+                  {user?.name}
+                </p>
                 <p className="text-xs text-slate-500">{user?.email}</p>
               </>
             )}
@@ -129,7 +133,7 @@ export function DashboardNav() {
       {/* Mobile overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
+          className="fixed inset-0 backdrop-blur-lg bg-gray-400/60 z-30 md:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}
