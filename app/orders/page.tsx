@@ -41,6 +41,7 @@ export default function OrdersPage() {
   const [statusFilter, setStatusFilter] = useState("");
 
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [loadingOrders, setLoadingOrders] = useState(true);
 
   const fetchProducts = async () => {
     const res = await fetch("/api/products", {
@@ -51,6 +52,8 @@ export default function OrdersPage() {
   };
 
   const fetchOrders = async () => {
+    setLoadingOrders(true);
+
     const query = statusFilter ? `?status=${statusFilter}` : "";
 
     const res = await fetch(`/api/orders${query}`, {
@@ -59,6 +62,8 @@ export default function OrdersPage() {
 
     const data = await res.json();
     setOrders(data);
+
+    setLoadingOrders(false);
   };
 
   useEffect(() => {
@@ -172,7 +177,7 @@ export default function OrdersPage() {
           </div>
 
           <select
-            className="border rounded px-3 py-2"
+            className="border rounded px-3 py-2 mb-4 bg-white"
             value={statusFilter}
             onChange={(e) => {
               setStatusFilter(e.target.value);
@@ -186,13 +191,56 @@ export default function OrdersPage() {
           </select>
 
           {/* Orders List */}
-          <div className="bg-white rounded-lg border p-6">
-            {orders.length === 0 ? (
+          <div className=" rounded-lg ">
+            {loadingOrders ? (
+              <div className="space-y-4">
+                {[...Array(4)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="border p-4 rounded-lg bg-white space-y-3">
+                    {/* Header */}
+                    <div className="flex justify-between items-center">
+                      <div className="space-y-2">
+                        <div className="h-4 w-32 bg-slate-200 rounded animate-pulse" />
+                        <div className="h-3 w-24 bg-slate-200 rounded animate-pulse" />
+                      </div>
+
+                      <div className="h-6 w-20 bg-slate-200 rounded animate-pulse" />
+                    </div>
+
+                    {/* Items */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <div className="h-3 w-40 bg-slate-200 rounded animate-pulse" />
+                        <div className="h-3 w-12 bg-slate-200 rounded animate-pulse" />
+                      </div>
+                      <div className="flex justify-between">
+                        <div className="h-3 w-36 bg-slate-200 rounded animate-pulse" />
+                        <div className="h-3 w-12 bg-slate-200 rounded animate-pulse" />
+                      </div>
+
+                      <div className="border-t pt-2 flex justify-between">
+                        <div className="h-4 w-16 bg-slate-200 rounded animate-pulse" />
+                        <div className="h-4 w-16 bg-slate-200 rounded animate-pulse" />
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-2">
+                      <div className="h-8 w-28 bg-slate-200 rounded animate-pulse" />
+                      <div className="h-8 w-20 bg-slate-200 rounded animate-pulse" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : orders.length === 0 ? (
               <p className="text-center text-slate-500">No orders found</p>
             ) : (
               <div className="space-y-4">
                 {orders.map((order) => (
-                  <div key={order.id} className="border p-4 rounded-lg">
+                  <div
+                    key={order.id}
+                    className="border p-4 rounded-lg bg-white">
                     <div className="flex justify-between items-center mb-2">
                       <div>
                         <p className="font-semibold">{order.customerName}</p>
