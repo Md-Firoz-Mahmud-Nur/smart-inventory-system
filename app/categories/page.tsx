@@ -3,6 +3,7 @@
 import { DashboardNav } from "@/app/components/dashboard-nav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect, useState } from "react";
 
 type Category = {
@@ -20,9 +21,9 @@ export default function CategoriesPage() {
   const [name, setName] = useState("");
   const [error, setError] = useState("");
 
-  // Fetch categories
   const fetchCategories = async () => {
     try {
+      setLoading(true);
       const res = await fetch("/api/categories", {
         credentials: "include",
       });
@@ -30,6 +31,8 @@ export default function CategoriesPage() {
       setCategories(data);
     } catch (err) {
       console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -37,7 +40,6 @@ export default function CategoriesPage() {
     fetchCategories();
   }, []);
 
-  // Create category
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -60,7 +62,7 @@ export default function CategoriesPage() {
 
       setName("");
       setOpen(false);
-      fetchCategories(); // refresh list
+      fetchCategories();
     } catch (err) {
       setError("Something went wrong");
       console.error(err);
@@ -74,7 +76,7 @@ export default function CategoriesPage() {
       <DashboardNav />
 
       <main className="flex-1 overflow-auto">
-        <div className="p-8">
+        <div className="p-6 max-md:pt-16">
           {/* Header */}
           <div className="flex justify-between items-center mb-8">
             <div>
@@ -89,7 +91,18 @@ export default function CategoriesPage() {
 
           {/* List */}
           <div className="bg-white rounded-lg border border-slate-200 p-6">
-            {categories.length === 0 ? (
+            {loading ? (
+              <div className="space-y-3">
+                {[...Array(5)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="flex justify-between items-center border p-4 rounded-lg">
+                      <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                ))}
+              </div>
+            ) : categories.length === 0 ? (
               <p className="text-slate-600 text-center">No categories found</p>
             ) : (
               <div className="space-y-3">
@@ -109,7 +122,6 @@ export default function CategoriesPage() {
         </div>
       </main>
 
-      {/* Modal */}
       {open && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/40">
           <div className="bg-white w-full max-w-md p-6 rounded-lg shadow-lg">
