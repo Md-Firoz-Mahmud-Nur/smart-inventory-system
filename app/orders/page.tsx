@@ -18,6 +18,13 @@ type Order = {
   customerName: string;
   totalPrice: number;
   status: string;
+  orderItems: {
+    quantity: number;
+    price: number;
+    product: {
+      name: string;
+    };
+  }[];
 };
 
 export default function OrdersPage() {
@@ -191,8 +198,21 @@ export default function OrdersPage() {
                       </span>
                     </div>
 
-                    <div className="text-sm text-slate-600 mb-2">
-                      Total: ${order.totalPrice}
+                    <div className="text-sm text-slate-700 space-y-1 mt-2">
+                      {order.orderItems.map((item, i) => (
+                        <div key={i} className="flex justify-between">
+                          <span>
+                            {item.product.name} × {item.quantity}
+                          </span>
+                          <span>${item.price * item.quantity}</span>
+                        </div>
+                      ))}
+
+                      {/* Divider */}
+                      <div className="border-t pt-2 mt-2 flex justify-between font-semibold">
+                        <span>Total</span>
+                        <span>${order.totalPrice}</span>
+                      </div>
                     </div>
 
                     {/* Actions */}
