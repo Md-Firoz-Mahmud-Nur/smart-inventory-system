@@ -125,6 +125,23 @@ export default function OrdersPage() {
     }
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "Pending":
+        return "bg-gray-200 text-gray-700";
+      case "Confirmed":
+        return "bg-blue-100 text-blue-700";
+      case "Shipped":
+        return "bg-yellow-100 text-yellow-700";
+      case "Delivered":
+        return "bg-green-100 text-green-700";
+      case "Cancelled":
+        return "bg-red-100 text-red-700";
+      default:
+        return "bg-slate-200";
+    }
+  };
+
   const isOrderValid = () => {
     if (!customerName) return false;
 
@@ -165,7 +182,7 @@ export default function OrdersPage() {
       <DashboardNav />
 
       <main className="flex-1 overflow-auto">
-        <div className="p-8">
+        <div className="p-6 max-md:pt-16">
           {/* Header */}
           <div className="flex justify-between items-center mb-8">
             <div>
@@ -194,7 +211,7 @@ export default function OrdersPage() {
           <div className=" rounded-lg ">
             {loadingOrders ? (
               <div className="space-y-4">
-                {[...Array(4)].map((_, i) => (
+                {[...Array(3)].map((_, i) => (
                   <div
                     key={i}
                     className="border p-4 rounded-lg bg-white space-y-3">
@@ -247,7 +264,8 @@ export default function OrdersPage() {
                         <p className="text-sm text-slate-500">#{order.id}</p>
                       </div>
 
-                      <span className="text-sm px-2 py-1 rounded bg-slate-200 flex items-center gap-2">
+                      <span
+                        className={`text-sm px-2 py-1 rounded flex items-center gap-2 ${getStatusColor(order.status)}`}>
                         {updatingId === order.id && (
                           <span className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></span>
                         )}
@@ -272,7 +290,7 @@ export default function OrdersPage() {
                       </div>
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 pt-2">
                       <select
                         className="border rounded px-2 py-1 text-sm"
                         value={order.status}
