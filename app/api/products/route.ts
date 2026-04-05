@@ -52,7 +52,6 @@ export async function POST(req: NextRequest) {
     const { name, categoryId, price, stock, minimumStockThreshold } =
       productSchema.parse(body);
 
-    // Verify category belongs to user
     const category = await prisma.category.findUnique({
       where: { id: categoryId },
     });
@@ -92,7 +91,6 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // ✅ Activity Log
       await prisma.activityLog.create({
         data: {
           userId: user.id,

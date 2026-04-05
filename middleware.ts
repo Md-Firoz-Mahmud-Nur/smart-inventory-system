@@ -8,20 +8,16 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get('auth_token')?.value;
 
-  // Check if accessing protected routes
   const isProtectedRoute = protectedRoutes.some((route) =>
     pathname.startsWith(route)
   );
 
-  // Check if accessing auth routes
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
 
-  // If no token and trying to access protected route, redirect to login
   if (isProtectedRoute && !token) {
     return NextResponse.redirect(new URL('/auth/login', request.url));
   }
 
-  // If token exists and trying to access auth routes, redirect to dashboard
   if (isAuthRoute && token) {
     const verified = verifyToken(token);
     if (verified) {

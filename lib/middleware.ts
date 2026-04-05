@@ -14,7 +14,6 @@ export async function verifyAuth(req: NextRequest): Promise<AuthUser | null> {
 
     const decoded = verifyToken(token);
 
-    console.log(decoded);
     if (!decoded) return null;
 
     return {

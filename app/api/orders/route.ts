@@ -105,9 +105,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Create order within transaction (atomic operation)
     const order = await prisma.$transaction(async (tx) => {
-      // Create order
       let totalPrice = 0;
       const orderItemsData = [];
 
@@ -131,7 +129,6 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // Create the order with items
       const newOrder = await tx.order.create({
         data: {
           userId: user.id,
@@ -144,7 +141,6 @@ export async function POST(req: NextRequest) {
         include: { orderItems: { include: { product: true } } },
       });
 
-      // Check and update products that fall below threshold
       for (const item of items) {
         const updatedProduct = await tx.product.findUnique({
           where: { id: item.productId },
@@ -159,26 +155,23 @@ export async function POST(req: NextRequest) {
           });
         }
 
-        // Add to restock queue if below threshold
         if (updatedProduct.stock < updatedProduct.minimumStockThreshold) {
           const existingQueue = await tx.restockQueue.findUnique({
             where: { productId: item.productId },
           });
 
-          if (!existingQueue) {
-            const priority =
-              updatedProduct.stock === 0
-                ? "High"
-                : updatedProduct.stock <=
-                    updatedProduct.minimumStockThreshold / 2
-                  ? "Medium"
-                  : "Low";
+          const priority =
+            updatedProduct.stock === 0
+              ? "High"
+              : updatedProduct.stock <= updatedProduct.minimumStockThreshold / 2
+                ? "Medium"
+                : "Low";
 
+          if (!existingQueue) {
             await tx.restockQueue.create({
               data: { productId: item.productId, priority },
             });
 
-            // ✅ 🔥 Activity Log (IMPORTANT)
             await tx.activityLog.create({
               data: {
                 userId: user.id,
@@ -188,11 +181,25 @@ export async function POST(req: NextRequest) {
                 details: `${updatedProduct.name} added to restock queue from Order #${newOrder.id} (Priority: ${priority})`,
               },
             });
+          } else if (existingQueue.priority !== priority) {
+            await tx.restockQueue.update({
+              where: { productId: item.productId },
+              data: { priority },
+            });
+
+            await tx.activityLog.create({
+              data: {
+                userId: user.id,
+                action: "Restock Priority Updated",
+                productId: item.productId,
+                orderId: newOrder.id,
+                details: `${updatedProduct.name} priority updated to ${priority} (Order #${newOrder.id})`,
+              },
+            });
           }
         }
       }
 
-      // Log activity
       await tx.activityLog.create({
         data: {
           userId: user.id,

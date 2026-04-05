@@ -125,7 +125,7 @@ export default function LoginPage() {
           className="w-full mt-3"
           onClick={handleDemoLogin}
           disabled={loading}>
-          {loading ? "Logging in..." : "Sign In as Demo User"}
+          {loading ? "Singing in..." : "Sign In as Demo User"}
         </Button>
 
         <p className="text-center text-slate-600 text-sm mt-6">

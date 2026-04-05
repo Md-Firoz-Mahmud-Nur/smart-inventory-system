@@ -33,18 +33,6 @@ export async function POST(req: NextRequest) {
   try {
     const user = await verifyAuth(req);
 
-    console.log("aa\aa");
-
-    console.log(user);
-
-    //  ✓ Compiled in 51ms
-    // aaaa
-    // {
-    //   userId: 'cmnh9x49g000h9ohknbb3e3fn',
-    //   iat: 1775122190,
-    //   exp: 1775726990
-    // }
-
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

@@ -71,7 +71,6 @@ export async function PUT(
       },
     });
 
-    // Log activity
     await prisma.activityLog.create({
       data: {
         userId: user.id,
@@ -118,9 +117,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    // Use transaction to restore stock when cancelling order
     await prisma.$transaction(async (tx) => {
-      // Restore stock for all items
       for (const item of order.orderItems) {
         await tx.product.update({
           where: { id: item.productId },
@@ -128,10 +125,8 @@ export async function DELETE(
         });
       }
 
-      // Delete the order
       await tx.order.delete({ where: { id } });
 
-      // Log activity
       await tx.activityLog.create({
         data: {
           userId: user.id,
