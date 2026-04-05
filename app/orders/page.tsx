@@ -40,7 +40,8 @@ export default function OrdersPage() {
   const [error, setError] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
-  // 🔹 Fetch products
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
   const fetchProducts = async () => {
     const res = await fetch("/api/products", {
       credentials: "include",
@@ -49,7 +50,6 @@ export default function OrdersPage() {
     setProducts(data);
   };
 
-  // 🔹 Fetch orders
   const fetchOrders = async () => {
     const query = statusFilter ? `?status=${statusFilter}` : "";
 
@@ -66,12 +66,10 @@ export default function OrdersPage() {
     fetchOrders();
   }, [statusFilter]);
 
-  // 🔹 Add item row
   const addItem = () => {
     setItems([...items, { productId: "", quantity: 1 }]);
   };
 
-  // 🔹 Handle create order
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -95,7 +93,6 @@ export default function OrdersPage() {
         return;
       }
 
-      // reset
       setCustomerName("");
       setItems([{ productId: "", quantity: 1 }]);
       resetForm();
@@ -110,6 +107,19 @@ export default function OrdersPage() {
     }
   };
 
+  const getNextStatuses = (current: string) => {
+    switch (current) {
+      case "Pending":
+        return ["Pending", "Confirmed", "Cancelled"];
+      case "Confirmed":
+        return ["Confirmed", "Shipped"];
+      case "Shipped":
+        return ["Shipped", "Delivered"];
+      default:
+        return [current];
+    }
+  };
+
   const isOrderValid = () => {
     if (!customerName) return false;
 
@@ -120,17 +130,13 @@ export default function OrdersPage() {
 
       if (!product) return false;
 
-      // ❗ Inactive / unavailable product
       if (product.status === "Inactive") return false;
 
-      // ❗ Out of stock
       if (product.status === "Out of Stock") return false;
 
-      // ❗ Duplicate detection
       if (seen.has(item.productId)) return false;
       seen.add(item.productId);
 
-      // ❗ Quantity validation
       if (item.quantity > product.stock) return false;
       if (item.quantity < 1) return false;
     }
@@ -193,7 +199,10 @@ export default function OrdersPage() {
                         <p className="text-sm text-slate-500">#{order.id}</p>
                       </div>
 
-                      <span className="text-sm px-2 py-1 rounded bg-slate-200">
+                      <span className="text-sm px-2 py-1 rounded bg-slate-200 flex items-center gap-2">
+                        {updatingId === order.id && (
+                          <span className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></span>
+                        )}
                         {order.status}
                       </span>
                     </div>
@@ -215,13 +224,14 @@ export default function OrdersPage() {
                       </div>
                     </div>
 
-                    {/* Actions */}
                     <div className="flex gap-2">
-                      {/* Status Dropdown */}
                       <select
                         className="border rounded px-2 py-1 text-sm"
                         value={order.status}
+                        disabled={updatingId === order.id}
                         onChange={async (e) => {
+                          setUpdatingId(order.id);
+
                           await fetch(`/api/orders/${order.id}`, {
                             method: "PUT",
                             headers: { "Content-Type": "application/json" },
@@ -229,22 +239,16 @@ export default function OrdersPage() {
                             body: JSON.stringify({ status: e.target.value }),
                           });
 
-                          fetchOrders();
+                          await fetchOrders();
+                          setUpdatingId(null);
                         }}>
-                        {[
-                          "Pending",
-                          "Confirmed",
-                          "Shipped",
-                          "Delivered",
-                          "Cancelled",
-                        ].map((s) => (
+                        {getNextStatuses(order.status).map((s) => (
                           <option key={s} value={s}>
                             {s}
                           </option>
                         ))}
                       </select>
 
-                      {/* Cancel */}
                       <Button
                         size="sm"
                         variant="destructive"
@@ -269,7 +273,6 @@ export default function OrdersPage() {
         </div>
       </main>
 
-      {/* Modal */}
       {open && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/40">
           <div className="bg-white w-full max-w-lg p-6 rounded-lg">
@@ -333,7 +336,6 @@ export default function OrdersPage() {
                         })}
                       </select>
 
-                      {/* Quantity */}
                       <Input
                         type="number"
                         min="1"
@@ -356,21 +358,18 @@ export default function OrdersPage() {
                     {/* 🔥 Stock Warning */}
                     {selectedProduct && (
                       <div className="text-xs space-y-1">
-                        {/* ❗ Inactive */}
                         {selectedProduct.status === "Inactive" && (
                           <p className="text-red-600 font-medium">
                             This product is currently unavailable.
                           </p>
                         )}
 
-                        {/* ❗ Out of Stock */}
                         {selectedProduct.status === "Out of Stock" && (
                           <p className="text-red-600 font-medium">
                             This product is currently unavailable.
                           </p>
                         )}
 
-                        {/* ❗ Duplicate check */}
                         {items.filter((i) => i.productId === item.productId)
                           .length > 1 && (
                           <p className="text-red-500">
@@ -378,7 +377,6 @@ export default function OrdersPage() {
                           </p>
                         )}
 
-                        {/* ❗ Stock warning */}
                         {selectedProduct.status === "Active" &&
                           item.quantity > selectedProduct.stock && (
                             <p className="text-red-500">
@@ -387,7 +385,6 @@ export default function OrdersPage() {
                             </p>
                           )}
 
-                        {/* ✅ Available */}
                         {selectedProduct.status === "Active" &&
                           item.quantity <= selectedProduct.stock && (
                             <p className="text-slate-500">
