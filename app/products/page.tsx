@@ -3,6 +3,7 @@
 import { DashboardNav } from "@/app/components/dashboard-nav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect, useState } from "react";
 
 type Category = {
@@ -13,6 +14,7 @@ type Category = {
 export default function ProductsPage() {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [form, setForm] = useState({
@@ -38,6 +40,8 @@ export default function ProductsPage() {
 
   const fetchProducts = async () => {
     try {
+      setPageLoading(true);
+
       const res = await fetch("/api/products", {
         credentials: "include",
       });
@@ -45,6 +49,8 @@ export default function ProductsPage() {
       setProducts(data);
     } catch (err) {
       console.error(err);
+    } finally {
+      setPageLoading(false);
     }
   };
 
@@ -114,7 +120,7 @@ export default function ProductsPage() {
       <DashboardNav />
 
       <main className="flex-1 overflow-auto">
-        <div className="p-8">
+        <div className="p-6 max-md:pt-16">
           {/* Header */}
           <div className="flex justify-between items-center mb-8">
             <div>
@@ -128,7 +134,25 @@ export default function ProductsPage() {
           </div>
 
           <div className="bg-white rounded-lg border border-slate-200 p-6">
-            {products.length === 0 ? (
+            {pageLoading ? (
+              <div className="space-y-4">
+                {[...Array(6)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="flex justify-between items-center border-b pb-2">
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-40" />
+                      <Skeleton className="h-3 w-24" />
+                    </div>
+
+                    <div className="text-right space-y-2">
+                      <Skeleton className="h-4 w-16 ml-auto" />
+                      <Skeleton className="h-5 w-20 ml-auto rounded-full" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : products.length === 0 ? (
               <p className="text-slate-600 text-center">No products found</p>
             ) : (
               <div className="space-y-4">
