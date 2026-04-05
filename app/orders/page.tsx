@@ -278,16 +278,24 @@ export default function OrdersPage() {
                         value={order.status}
                         disabled={updatingId === order.id}
                         onChange={async (e) => {
+                          const newStatus = e.target.value;
                           setUpdatingId(order.id);
 
                           await fetch(`/api/orders/${order.id}`, {
                             method: "PUT",
                             headers: { "Content-Type": "application/json" },
                             credentials: "include",
-                            body: JSON.stringify({ status: e.target.value }),
+                            body: JSON.stringify({ status: newStatus }),
                           });
 
-                          await fetchOrders();
+                          setOrders((prev) =>
+                            prev.map((o) =>
+                              o.id === order.id
+                                ? { ...o, status: newStatus }
+                                : o,
+                            ),
+                          );
+
                           setUpdatingId(null);
                         }}>
                         {getNextStatuses(order.status).map((s) => (
