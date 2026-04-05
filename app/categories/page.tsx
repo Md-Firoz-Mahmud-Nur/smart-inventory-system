@@ -1,34 +1,3 @@
-// 'use client';
-
-// import { DashboardNav } from '@/app/components/dashboard-nav';
-// import { Button } from '@/components/ui/button';
-// import { useState } from 'react';
-
-// export default function CategoriesPage() {
-//   const [loading] = useState(false);
-
-//   return (
-//     <div className="flex min-h-screen bg-slate-100">
-//       <DashboardNav />
-//       <main className="flex-1 overflow-auto">
-//         <div className="p-8">
-//           <div className="flex justify-between items-center mb-8">
-//             <div>
-//               <h1 className="text-3xl font-bold text-slate-900">Categories</h1>
-//               <p className="text-slate-600 mt-1">Organize your products by category</p>
-//             </div>
-//             <Button disabled={loading}>Add Category</Button>
-//           </div>
-
-//           <div className="bg-white rounded-lg border border-slate-200 p-8 text-center">
-//             <p className="text-slate-600">Categories list coming soon...</p>
-//           </div>
-//         </div>
-//       </main>
-//     </div>
-//   );
-// }
-
 "use client";
 
 import { DashboardNav } from "@/app/components/dashboard-nav";
